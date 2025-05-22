@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useMemo } from 'react'
-import connect from 'common/utils/connect'
+import React, { useEffect, useRef, useMemo } from "react"
+import connect from "common/utils/connect"
 import {
   containerStyle,
   headerContainerStyle,
@@ -15,42 +15,42 @@ import {
   collectionGradientStyle,
   logoStyle,
   inputStyle,
-  rightHeaderStyle
-} from 'shared/pages/ExternalAdsCollections/style'
-import logo from 'common/assets/logo/housing-black.png'
-import Image from 'common/components/Image'
-import pageWrap from 'common/utils/pageWrapper'
-import trackMap from 'shared/pages/ExternalAdsCollections/tracking'
-import useTracking from 'common/customHooks/useTracking'
-import { HT_COLLECTION_BANNER } from 'common/constants/pageTypes'
+  rightHeaderStyle,
+} from "shared/pages/ExternalAdsCollections/style"
+import logo from "common/assets/logo/housing-black.png"
+import Image from "common/components/Image"
+import pageWrap from "common/utils/pageWrapper"
+import trackMap from "shared/pages/ExternalAdsCollections/tracking"
+import useTracking from "common/customHooks/useTracking"
+import { HT_COLLECTION_BANNER } from "common/constants/pageTypes"
 import getData, {
-  fetchFeaturedCollectionsAndUpdateCity
-} from 'shared/pages/ExternalAdsCollections/fetchData'
-import CitySelectDropdown from 'common/components/City/CitySelectDropdown'
-import useLocalBodyScroll from 'common/customHooks/useLocalBodyScroll'
+  fetchFeaturedCollectionsAndUpdateCity,
+} from "shared/pages/ExternalAdsCollections/fetchData"
+import CitySelectDropdown from "common/components/City/CitySelectDropdown"
+import useLocalBodyScroll from "common/customHooks/useLocalBodyScroll"
 import Carousel, {
   defaultPreviousTemplate,
-  defaultNextTemplate
-} from 'common/components/Carousel'
-import relToAbs from 'common/utils/absoluteUrl'
-import thirdPartyTracking from 'common/utils/thirdPartyTracking'
+  defaultNextTemplate,
+} from "common/components/Carousel"
+import relToAbs from "common/utils/absoluteUrl"
+import thirdPartyTracking from "common/utils/thirdPartyTracking"
 
 const ExternalAdsCollections = ({
   isMobile,
   city,
   fetchFeaturedCollectionsAndUpdateCity,
   collections,
-  topCities
+  topCities,
 }) => {
   useLocalBodyScroll(true)
   const track = useTracking()
   useEffect(() => {
-    track('IMPRESSIONS')
+    track("IMPRESSIONS")
     thirdPartyTracking.hindustanTimes()
   }, [])
 
   let { name: cityName } = city || {}
-  const collectionElement = collections.map(item => (
+  const collectionElement = collections.map((item) => (
     <CollectionsRenderer
       data={item}
       isMobile={isMobile}
@@ -65,7 +65,7 @@ const ExternalAdsCollections = ({
     inputContainerRef.current.click()
   }
   const data = useMemo(
-    () => [{ id: 'top', label: 'Top Cities', list: topCities }],
+    () => [{ id: "top", label: "Top Cities", list: topCities }],
     [topCities]
   )
 
@@ -115,46 +115,45 @@ const ExternalAdsCollections = ({
   )
 }
 
-const Logo = ({ track, isMobile }) => (
-  <div css={logoContainerStyle}>
-    <div>Powered by:</div>
-    <Image
-      onClick={() => {
-        track('BANNER_CLICK')
-        window.open(
-          relToAbs(
-            `?utm_source=hindustantimes&utm_medium=affiliate&utm_campaign=ht_${
-              isMobile ? 'mo' : 'dt'
-            }_module`
-          ),
+const Logo = ({ track, isMobile }) => {
+  const onClick = () => {
+    track("BANNER_CLICK")
+    window.open(
+      relToAbs(
+        `?utm_source=hindustantimes&utm_medium=affiliate&utm_campaign=ht_${
+          isMobile ? "mo" : "dt"
+        }_module`
+      ),
 
-          '_blank'
-        )
-      }}
-      lazy={false}
-      src={logo}
-      style={logoStyle}
-    />
-  </div>
-)
+      "_blank"
+    )
+  }
+
+  return (
+    <div css={logoContainerStyle}>
+      <div>Powered by:</div>
+      <Image onClick={onClick} lazy={false} src={logo} style={logoStyle} />
+    </div>
+  )
+}
 
 const CollectionsRenderer = ({
   data: { title, image, url } = {},
   isMobile,
-  track
+  track,
 }) => {
   return (
     <div
       onClick={() => {
-        track('COLLECTION_CLICK', { collection: title })
+        track("COLLECTION_CLICK", { collection: title })
         window.open(
           relToAbs(
             `${url}?utm_source=hindustantimes&utm_medium=affiliate&utm_campaign=ht_${
-              isMobile ? 'mo' : 'dt'
+              isMobile ? "mo" : "dt"
             }_module`
           ),
 
-          '_blank'
+          "_blank"
         )
       }}
       css={collectionWrapperStyle}
@@ -169,17 +168,17 @@ const CollectionsRenderer = ({
 
 const props = ({
   shell: {
-    useragent: { isMobile }
+    useragent: { isMobile },
   },
 
   masterData: { cityList: { topCities = [] } = {} },
   filters: { selectedCity = {} } = {},
-  meta: { collections = [] }
+  meta: { collections = [] },
 }) => ({
   isMobile,
   city: selectedCity,
   topCities,
-  collections
+  collections,
 })
 
 // cacheTime 1 day
@@ -187,7 +186,7 @@ export default pageWrap({
   trackMap,
   getData,
   pageType: HT_COLLECTION_BANNER,
-  cacheTime: 86400
+  cacheTime: 86400,
 })(
   connect({ props, actions: { fetchFeaturedCollectionsAndUpdateCity } })(
     ExternalAdsCollections
