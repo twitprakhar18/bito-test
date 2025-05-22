@@ -1,59 +1,195 @@
+import React, { useEffect, useRef, useMemo } from 'react'
 import connect from 'common/utils/connect'
-import loadable from 'common/utils/loadable'
-import React from 'react'
-import useLocality from 'common/components/ExploreNeighbourhood/useLocality'
-import trackMap from 'shared/pages/Dedicated/common/tracking'
+import {
+  containerStyle,
+  headerContainerStyle,
+  headingStyle,
+  subHeadingStyle,
+  highlightFontStyle,
+  inputContainerStyle,
+  imageStyle,
+  collectionContainerStyle,
+  collectionWrapperStyle,
+  collectionTextStyle,
+  logoContainerStyle,
+  collectionGradientStyle,
+  logoStyle,
+  inputStyle,
+  rightHeaderStyle
+} from 'shared/pages/ExternalAdsCollections/style'
+import logo from 'common/assets/logo/housing-black.png'
+import Image from 'common/components/Image'
 import pageWrap from 'common/utils/pageWrapper'
-import reducer from 'shared/pages/Dedicated/common/reducer'
-import { DEDICATED } from 'common/constants/pageTypes'
-import NeighbourhoodTemplate from 'common/components/ExploreNeighbourhood/Container/loader'
-const lazyGetData = () => import('shared/pages/Dedicated/common/fetchData')
+import trackMap from 'shared/pages/ExternalAdsCollections/tracking'
+import useTracking from 'common/customHooks/useTracking'
+import { HT_COLLECTION_BANNER } from 'common/constants/pageTypes'
+import getData, {
+  fetchFeaturedCollectionsAndUpdateCity
+} from 'shared/pages/ExternalAdsCollections/fetchData'
+import CitySelectDropdown from 'common/components/City/CitySelectDropdown'
+import useLocalBodyScroll from 'common/customHooks/useLocalBodyScroll'
+import Carousel, {
+  defaultPreviousTemplate,
+  defaultNextTemplate
+} from 'common/components/Carousel'
+import relToAbs from 'common/utils/absoluteUrl'
+import thirdPartyTracking from 'common/utils/thirdPartyTracking'
 
-let ModalComponent = loadable(
-  () =>
-    import(
-      /* webpackChunkName: "Demand/ExploreOnMap/index/ExploreNeighbourhood/Container" */ 'common/components/ExploreNeighbourhood/Container'
-    ),
+const ExternalAdsCollections = ({
+  isMobile,
+  city,
+  fetchFeaturedCollectionsAndUpdateCity,
+  collections,
+  topCities
+}) => {
+  useLocalBodyScroll(true)
+  const track = useTracking()
+  useEffect(() => {
+    track('IMPRESSIONS')
+    thirdPartyTracking.hindustanTimes()
+  }, [])
 
-  { silent: false, ssr: false }
-)
-
-const ExploreOnMap = ({ details, isBot }) => {
-  const { coords } = details || {}
-
-  const [modalLoaded, filteredData] = useLocality(coords, { isBot })
-  const fallback = <NeighbourhoodTemplate />
-  if (!modalLoaded) {
-    return fallback
-  }
-  return (
-    <ModalComponent
-      fallback={fallback}
-      mapClick={false}
-      coords={coords}
-      showHeader={false}
-      filteredData={filteredData}
-      details={details}
+  let { name: cityName } = city || {}
+  const collectionElement = collections.map(item => (
+    <CollectionsRenderer
+      data={item}
+      isMobile={isMobile}
+      track={track}
+      key={item.title}
     />
+  ))
+
+  const inputContainerRef = useRef(null)
+
+  const handleScroll = () => {
+    inputContainerRef.current.click()
+  }
+  const data = useMemo(
+    () => [{ id: 'top', label: 'Top Cities', list: topCities }],
+    [topCities]
+  )
+
+  return (
+    <div css={containerStyle}>
+      <div css={headerContainerStyle}>
+        <div css={headingStyle}>
+          Featured <span css={highlightFontStyle}>Collections</span>
+          {!isMobile && (
+            <div css={subHeadingStyle}>Exclusive showcase of top projects</div>
+          )}
+        </div>
+        <div css={rightHeaderStyle}>
+          <div ref={inputContainerRef} css={inputContainerStyle}>
+            <CitySelectDropdown
+              data={data}
+              currentCity={city}
+              changeCity={fetchFeaturedCollectionsAndUpdateCity}
+              placeholder={cityName}
+              style={inputStyle}
+            />
+          </div>
+          <Logo track={track} isMobile={isMobile} />
+        </div>
+      </div>
+      {isMobile ? (
+        <div onScroll={handleScroll} css={collectionContainerStyle}>
+          {collectionElement}
+        </div>
+      ) : (
+        <div css={collectionContainerStyle}>
+          <Carousel
+            slidesToShow={4}
+            slidesToScroll={1}
+            startSlide={0}
+            centerMode={false}
+            isMobile={false}
+            freeScroll={false}
+            previousTemplate={defaultPreviousTemplate()}
+            nextTemplate={defaultNextTemplate()}
+          >
+            {collectionElement}
+          </Carousel>
+        </div>
+      )}
+    </div>
   )
 }
-let props = ({
+
+const Logo = ({ track, isMobile }) => (
+  <div css={logoContainerStyle}>
+    <div>Powered by:</div>
+    <Image
+      onClick={() => {
+        track('BANNER_CLICK')
+        window.open(
+          relToAbs(
+            `?utm_source=hindustantimes&utm_medium=affiliate&utm_campaign=ht_${
+              isMobile ? 'mo' : 'dt'
+            }_module`
+          ),
+
+          '_blank'
+        )
+      }}
+      lazy={false}
+      src={logo}
+      style={logoStyle}
+    />
+  </div>
+)
+
+const CollectionsRenderer = ({
+  data: { title, image, url } = {},
+  isMobile,
+  track
+}) => {
+  return (
+    <div
+      onClick={() => {
+        track('COLLECTION_CLICK', { collection: title })
+        window.open(
+          relToAbs(
+            `${url}?utm_source=hindustantimes&utm_medium=affiliate&utm_campaign=ht_${
+              isMobile ? 'mo' : 'dt'
+            }_module`
+          ),
+
+          '_blank'
+        )
+      }}
+      css={collectionWrapperStyle}
+    >
+      <Image style={imageStyle} src={image} />
+      <div css={collectionGradientStyle}>
+        <div css={collectionTextStyle}>{title}</div>
+      </div>
+    </div>
+  )
+}
+
+const props = ({
   shell: {
-    useragent: { isBot }
+    useragent: { isMobile }
   },
 
-  propertyDetails: { details = {} } = {}
+  masterData: { cityList: { topCities = [] } = {} },
+  filters: { selectedCity = {} } = {},
+  meta: { collections = [] }
 }) => ({
-  details,
-  isBot
+  isMobile,
+  city: selectedCity,
+  topCities,
+  collections
 })
 
-// cacheTime 3 hours
+// cacheTime 1 day
 export default pageWrap({
-  lazyGetData,
-  reducer,
   trackMap,
-  pageType: DEDICATED,
-  scrollToTop: true,
+  getData,
+  pageType: HT_COLLECTION_BANNER,
   cacheTime: 86400
-})(connect({ props })(ExploreOnMap))
+})(
+  connect({ props, actions: { fetchFeaturedCollectionsAndUpdateCity } })(
+    ExternalAdsCollections
+  )
+)
